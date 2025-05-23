@@ -76,36 +76,51 @@ const { logger } = require('../utils/logging');
 
   async function fuzzySearch(payload) {
     try {
+      let elasticQuery = {
+        "query": {
+          "bool": {
+            "should": [
+              {
+                "match": {
+                  "name": {
+                    "query": payload.searchTerm,
+                    "fuzziness": "AUTO"
+                  }
+                }
+              },
+              {
+                "match_phrase_prefix": {
+                  "name": payload.searchTerm
+                }
+              },
+              {
+                "wildcard": {
+                  "name": {
+                    "value": `*${payload.searchTerm.toLowerCase()}*`  // This ensures that it can match "medi" anywhere in the name.
+                  }
+                }
+              }
+            ],
+            "minimum_should_match": 1,
+            filter: []
+          }
+        }
+     }
+    if(payload.filter && payload.filter.is_filter_active){
+      if (payload.filter.brandName.length > 0) {
+        elasticQuery.query.bool.filter.push({
+          terms: {
+            "brand.keyword": payload.filter.brandName
+          }
+        });
+      }
+    }
+
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2))
       const response = await axios.post(
         `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
         {
-            "query": {
-              "bool": {
-                "should": [
-                  {
-                    "match": {
-                      "name": {
-                        "query": payload.searchTerm,
-                        "fuzziness": "AUTO"
-                      }
-                    }
-                  },
-                  {
-                    "match_phrase_prefix": {
-                      "name": payload.searchTerm
-                    }
-                  },
-                  {
-                    "wildcard": {
-                      "name": {
-                        "value": `*${payload.searchTerm.toLowerCase()}*`  // This ensures that it can match "medi" anywhere in the name.
-                      }
-                    }
-                  }
-                ],
-                "minimum_should_match": 1
-              }
-            },
+            ...elasticQuery,
             "size": 10
           },
         {

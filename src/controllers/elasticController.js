@@ -74,7 +74,8 @@ const searchElasticController = async (req, res) => {
     if(!searchTerm){
       searchTerm = ""
     }
-    const response = await searchInProductForData(searchTerm);
+    let filterData = req.body
+    const response = await searchInProductForData(searchTerm,filterData);
     return setSuccessStatus(res,{response})
   } catch (error) {
     logger.error(`Error in etaController : ${error.message || error}`);

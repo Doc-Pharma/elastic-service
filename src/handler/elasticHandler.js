@@ -105,11 +105,12 @@ const deleteSingleRecordOfProductInElasticHandler = async (id) => {
   return model.response
 };
 
-const searchInProductForData = async(searchTerm) => {
+const searchInProductForData = async(searchTerm,filterData) => {
   let model = {}
   let elasticData = {
     index : "product",
     searchTerm : searchTerm,
+    filter : filterData
   }
   model.response = await fuzzySearch(elasticData)
   
