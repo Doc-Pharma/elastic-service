@@ -7,7 +7,12 @@ const { logger } = require('../utils/logging');
     try {
       const BULK_ES_URL = `${process.env.ES_BASE_URL}/_bulk`;
       const response = await apiCaller('POST', BULK_ES_URL, data,
-      { 'Content-Type': 'application/x-ndjson' }
+      { 'Content-Type': 'application/x-ndjson',
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      }
       );
       return response;
     } catch (error) {
@@ -21,7 +26,12 @@ const { logger } = require('../utils/logging');
 
   const getDocumentByIdInElasticSearch = async (payload) => {
     try {
-      const response = await axios.get(`${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_doc/${payload.id}`);
+      const response = await axios.get(`${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_doc/${payload.id}`,{
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      });
       return response;
     } catch (error) {
       logger.error(
@@ -36,7 +46,12 @@ const { logger } = require('../utils/logging');
     try {
     
       const BULK_ES_URL = `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_doc/${payload.id}`;
-      const response = await apiCaller('POST', BULK_ES_URL,payload.data);
+      const response = await apiCaller('POST', BULK_ES_URL,payload.data,{
+        auth: {
+        username: process.env.ES_USERNAME,
+        password: process.env.ES_PASSWORD
+        }
+      });
       return response;
     } catch (error) {
       logger.error(
@@ -50,7 +65,14 @@ const { logger } = require('../utils/logging');
   const updateSingleDocumentInElasticSearch = async () => {
     try {
       const BULK_ES_URL = `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_update/${payload.id}`;
-      const response = await apiCaller('POST', BULK_ES_URL,payload.data);
+      const response = await apiCaller('POST', BULK_ES_URL,payload.data,
+      {
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      }
+      );
       return response;
     } catch (error) {
       logger.error(
@@ -63,7 +85,14 @@ const { logger } = require('../utils/logging');
 
   const deleteSingleDocumentInElasticSearch = async (payload) => {
     try {
-      const response = await axios.delete(`${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_doc/${payload.id}`);
+      const response = await axios.delete(`${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_doc/${payload.id}`,
+      {  
+      auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      }
+      );
       return response;
     } catch (error) {
       logger.error(
@@ -117,7 +146,7 @@ const { logger } = require('../utils/logging');
     }
 
     console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2))
-      const response = await axios.post(
+      const response = await axios.post( 
         `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
         {
             ...elasticQuery,
@@ -126,6 +155,10 @@ const { logger } = require('../utils/logging');
         {
           headers: {
             'Content-Type': 'application/json'
+          },
+          auth: {
+            username: process.env.ES_USERNAME,
+            password: process.env.ES_PASSWORD
           }
         }
       );
