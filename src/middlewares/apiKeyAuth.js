@@ -1,4 +1,3 @@
-const { getPartnerByApiKey } = require('../handler/partnerOrderHandler');
 const { LRUCache } = require('../utils/LRUCache');
 const { logger } = require('../utils/logging');
 const { setUnauthorizedError, setBadRequestError } = require('../utils/responseStatus');
@@ -20,7 +19,7 @@ const setApiKeyRecordHeader = async (req, res, next) => {
     if (get_cache_data) {
       partner_data = get_cache_data;
     } else {
-      partner_data = await getPartnerByApiKey(api_key);
+      // partner_data = await getPartnerByApiKey(api_key);
     }
     if (partner_data) {
       API_KEY_CACHE.set(api_key, partner_data);
