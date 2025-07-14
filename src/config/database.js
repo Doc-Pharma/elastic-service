@@ -17,12 +17,15 @@ const sequelize = new Sequelize(DATABASE_URL, {
       require: true,
       rejectUnauthorized: false,
     },
+    keepAlive: true,
+    statement_timeout: 60000, // optional, cancel long-running queries
   },
   pool: {
-    max: 20,
-    min: 0,
-    acquire: 120000,
-    idle: 3600000,
+    max: 7,
+    min: 1,
+    acquire: 20000,
+    idle: 10000,
+    evict: 15000,
   },
   logging: false,
 });
