@@ -83,11 +83,27 @@ const searchElasticController = async (req, res) => {
   }
 };
 
+const advancedSearchElasticController = async (req, res) => {
+  try {
+    let searchTerm = req.query.searchTerm
+    if(!searchTerm){
+      searchTerm = ""
+    }
+    let filterData = req.body
+    const response = await searchInProductForData(searchTerm,filterData,true);
+    return setSuccessStatus(res,{response})
+  } catch (error) {
+    logger.error(`Error in etaController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+};
+
 module.exports = {
     searchElasticController,
     deleteSingleDocElasticController,
     updateSingleDocElasticController,
     getSingleDocElasticController,
     addSingleDocElasticController,
-    addBulkDocElasticController
+    addBulkDocElasticController,
+    advancedSearchElasticController
 };
