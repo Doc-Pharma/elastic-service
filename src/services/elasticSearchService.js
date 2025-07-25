@@ -171,6 +171,82 @@ async function fuzzySearch(payload) {
   }
 }
 
+async function advancedFuzzySearch(payload) {
+  try {
+
+    const words = payload.searchTerm.toLowerCase().split(" ");
+    const shouldClauses = words.flatMap(word => {
+      let modified_word;
+      const mg_match = word.match(/^(\d+)(mg)$/i);
+      const ml_match = word.match(/^(\d+)(ml)$/i);
+      if (mg_match) {
+        modified_word = `${mg_match[1]} ${mg_match[2]}`
+      }
+      if (ml_match) {
+        modified_word = `${ml_match[1]} ${ml_match[2]}`
+      }
+      return [
+        { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { strength: { query: word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { wildcard: { name: { value: `*${word}*` } } }
+      ]
+    });
+    let elasticQuery = {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "match": {
+                "name": {
+                  "query": payload.searchTerm,
+                  "fuzziness": "AUTO"
+                }
+              }
+            },
+            ...shouldClauses,
+          ],
+          "minimum_should_match": 1,
+          filter: []
+        }
+      }
+    }
+    if (payload.filter && payload.filter.is_filter_active) {
+      if (payload.filter.brandName.length > 0) {
+        elasticQuery.query.bool.filter.push({
+          terms: {
+            "brand.keyword": payload.filter.brandName
+          }
+        });
+      }
+    }
+
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2))
+    const response = await axios.post(
+      `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
+      {
+        ...elasticQuery,
+        "size": 10
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      }
+    );
+
+    logger.info('Search results:', JSON.stringify(response.data.hits.hits, null, 2));
+    return response.data.hits.hits
+  } catch (error) {
+    logger.error('Search error:', error.response?.data || error.message);
+  }
+}
+
 
 module.exports = {
   createBulkOrderInElasticsearch,
@@ -178,5 +254,6 @@ module.exports = {
   updateSingleDocumentInElasticSearch,
   getDocumentByIdInElasticSearch,
   deleteSingleDocumentInElasticSearch,
-  fuzzySearch
+  fuzzySearch,
+  advancedFuzzySearch
 };
