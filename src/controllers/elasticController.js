@@ -4,10 +4,10 @@ const { setBadRequestError, setInternalServerError, setSuccessStatus } = require
 
 const addBulkDocElasticController = async (req, res) => {
   try {
-    const response = await addBulkRecordForProductInElasticHandler();
-    return setSuccessStatus(res,{response})
+    await addBulkRecordForProductInElasticHandler();
+    return setSuccessStatus(res,"Success")
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in addBulkRecordForProductInElasticHandler : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -21,7 +21,7 @@ const addSingleDocElasticController = async (req, res) => {
     const response = await addSingleRecordOfProductInElasticHandler(id);
     return setSuccessStatus(res,{response})
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in addSingleDocElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -35,7 +35,7 @@ const getSingleDocElasticController = async (req, res) => {
     const response = await getSingleRecordOfProductInElasticHandler(id);
     return setSuccessStatus(res,{response})
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in getSingleDocElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -49,7 +49,7 @@ const updateSingleDocElasticController = async (req, res) => {
     const response = await updateSingleRecordOfProductInElasticHandler(id);
     return setSuccessStatus(res,{response})
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in updateSingleDocElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -63,7 +63,7 @@ const deleteSingleDocElasticController = async (req, res) => {
     const response = await deleteSingleRecordOfProductInElasticHandler(id);
     return setSuccessStatus(res,{response})
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in deleteSingleDocElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -78,7 +78,7 @@ const searchElasticController = async (req, res) => {
     const response = await searchInProductForData(searchTerm,filterData);
     return setSuccessStatus(res,{response})
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in searchElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -93,7 +93,7 @@ const advancedSearchElasticController = async (req, res) => {
     const response = await searchInProductForData(searchTerm,filterData,true);
     return setSuccessStatus(res,{response})
   } catch (error) {
-    logger.error(`Error in etaController : ${error.message || error}`);
+    logger.error(`Error in advancedSearchElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };

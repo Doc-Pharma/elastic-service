@@ -4,7 +4,7 @@ const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, upd
 const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form"]
 
 const addBulkRecordForProductInElasticHandler = async () => {
-  let model = {}
+  try {let model = {}
   model.data_length = 1
   while(model.data_length){
     console.log("model.data_length",model.data_length)
@@ -29,12 +29,15 @@ const addBulkRecordForProductInElasticHandler = async () => {
           })
         ];
       }).flat().join('\n') + '\n';
-    model.response = await createBulkOrderInElasticsearch(bulkBody)
+    model.result = await createBulkOrderInElasticsearch(bulkBody)
     model.data_length = model.data_length + 1
     }
   }
   
-  return model.response
+  return model.result
+}catch (err){
+  console.log(err)
+}
 };
 
 const addSingleRecordOfProductInElasticHandler = async (id) => {
