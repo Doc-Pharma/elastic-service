@@ -72,7 +72,7 @@ class BaseHelper {
       let data = {};
       data.where = inputData.query ? inputData.query : {};
       if (inputData.sortBy) {
-        data.sort = inputData.sortBy;
+        data.order = inputData.sortBy;
       }
       if (inputData.populate_data) {
         data.include = inputData.populate_data;
