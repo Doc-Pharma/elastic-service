@@ -1,7 +1,7 @@
 const productHelper = require("../helper/productHelper");
 const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch } = require("../services/elasticSearchService");
 
-const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form"]
+const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size"]
 
 const addBulkRecordForProductInElasticHandler = async () => {
   try {let model = {}
@@ -20,7 +20,11 @@ const addBulkRecordForProductInElasticHandler = async () => {
       const bulkBody = model.products.map(product => {
         let product_data = {}
         PRODUCT_TRANFORMATION_KEYS.map((key) => {
-          product_data[key] = product[key]
+          if(key === "transformed_pack_size"){
+            product_data[key] = `${pack_size.replace(product_form, '').trim()}`  
+          }else{
+            product_data[key] = product[key]
+          }
         })
         return [
           JSON.stringify({ index: { _index: `${process.env.ES_DB}-product`, _id: product.id } }),
