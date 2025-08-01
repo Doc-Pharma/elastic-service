@@ -247,6 +247,95 @@ async function advancedFuzzySearch(payload) {
   }
 }
 
+async function advancedFuzzySearchV2(payload) {
+  try {
+    const words = payload.searchTerm.toLowerCase().split(" ");
+    const shouldClauses = [];
+    const mustClauses = [];
+
+    for (const word of words) {
+      let modified_word = word;
+      const mg_match = word.match(/^(\d+)(mg)$/i);
+      const ml_match = word.match(/^(\d+)(ml)$/i);
+      const gm_match = word.match(/^(\d+)(gm)$/i);
+
+        const unit_match = word.match(/^(\d+)([a-zA-Z]+)$/);
+  if (unit_match) {
+    modified_word = `${unit_match[1]} ${unit_match[2]}`;
+
+    // Enforce pack_size match for any detected unit pattern
+    mustClauses.push({
+      match: {
+    "pack_size.keyword": "200 ml Syrup"
+      }
+    });
+  }
+
+      shouldClauses.push(
+        { match: { name: { query: modified_word, fuzziness: "AUTO" } } },
+        { match: { pack_size: { query: modified_word, fuzziness: "AUTO" } } },
+        { match: { strength: { query: word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: modified_word, fuzziness: "AUTO" } } },
+        { wildcard: { name: { value: `*${word}*` } } }
+      );
+    }
+
+    let elasticQuery = {
+      query: {
+        bool: {
+          should: [
+            {
+              match: {
+                name: {
+                  query: payload.searchTerm,
+                  fuzziness: "AUTO"
+                }
+              }
+            },
+            ...shouldClauses,
+          ],
+          minimum_should_match: 1,
+          must: mustClauses, // ← Add required match if unit detected
+          filter: []
+        }
+      }
+    };
+
+    // Add filter for brandName if present
+    if (payload.filter?.is_filter_active && payload.filter.brandName.length > 0) {
+      elasticQuery.query.bool.filter.push({
+        terms: {
+          "brand.keyword": payload.filter.brandName
+        }
+      });
+    }
+
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2));
+
+    const response = await axios.post(
+      `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
+      {
+        ...elasticQuery,
+        size: 10
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      }
+    );
+
+    logger.info('Search results:', JSON.stringify(response.data.hits.hits, null, 2));
+    return response.data.hits.hits;
+  } catch (error) {
+    logger.error('Search error:', error.response?.data || error.message);
+  }
+}
+
 
 module.exports = {
   createBulkOrderInElasticsearch,
@@ -255,5 +344,6 @@ module.exports = {
   getDocumentByIdInElasticSearch,
   deleteSingleDocumentInElasticSearch,
   fuzzySearch,
-  advancedFuzzySearch
+  advancedFuzzySearch,
+  advancedFuzzySearchV2
 };
