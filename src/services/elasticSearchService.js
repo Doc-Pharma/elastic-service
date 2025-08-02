@@ -255,7 +255,7 @@ async function advancedFuzzySearchV2(payload) {
       if (SKU_ABBREVIATIONS[word]) {
         word = SKU_ABBREVIATIONS[word]
       }
-      word = word.charAt(0).toUpperCase()
+      word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       let modified_word;
       const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s)$/i);
       if (match) {
@@ -329,7 +329,7 @@ async function advancedFuzzySearchV3(payload) {
       if (SKU_ABBREVIATIONS[word]) {
         word = SKU_ABBREVIATIONS[word]
       }
-      word = word.charAt(0).toUpperCase()
+      word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       let modified_word;
       const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s)$/i);
       if (match) {
