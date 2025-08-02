@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { apiCaller } = require('../utils/apiCaller');
 const { logger } = require('../utils/logging');
+const { SKU_ABBREVIATIONS } = require('../constant/sku_abv');
 
 //function to get invetory details from erp service
 const createBulkOrderInElasticsearch = async (data) => {
