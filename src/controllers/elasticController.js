@@ -1,4 +1,4 @@
-const { addBulkRecordForProductInElasticHandler, addSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData } = require('../handler/elasticHandler');
+const { addBulkRecordForProductInElasticHandler, addSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData } = require('../handler/elasticHandler');
 const { logger } = require('../utils/logging');
 const { setBadRequestError, setInternalServerError, setSuccessStatus } = require('../utils/responseStatus');
 
@@ -98,6 +98,38 @@ const advancedSearchElasticController = async (req, res) => {
   }
 };
 
+const advancedSearchV2ElasticController = async (req, res) => {
+  try {
+    let searchTerm = req.query.searchTerm
+    if(!searchTerm){
+      searchTerm = ""
+    }
+    let filterData = req.body
+    const response = await advancedSearchInProductForData(searchTerm,filterData,"V2");
+    return setSuccessStatus(res,{response})
+  } catch (error) {
+    logger.error(`Error in advancedSearchElasticController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+};
+
+const advancedSearchV3ElasticController = async (req, res) => {
+  try {
+    let searchTerm = req.query.searchTerm
+    if(!searchTerm){
+      searchTerm = ""
+    }
+    let filterData = req.body
+    const response = await advancedSearchInProductForData(searchTerm,filterData,"V3");
+    return setSuccessStatus(res,{response})
+  } catch (error) {
+    logger.error(`Error in advancedSearchElasticController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+};
+
+
+
 module.exports = {
     searchElasticController,
     deleteSingleDocElasticController,
@@ -105,5 +137,7 @@ module.exports = {
     getSingleDocElasticController,
     addSingleDocElasticController,
     addBulkDocElasticController,
-    advancedSearchElasticController
+    advancedSearchElasticController,
+    advancedSearchV2ElasticController,
+    advancedSearchV3ElasticController
 };
