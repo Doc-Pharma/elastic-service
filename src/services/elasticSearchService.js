@@ -177,13 +177,9 @@ async function advancedFuzzySearch(payload) {
     const words = payload.searchTerm.toLowerCase().split(" ");
     const shouldClauses = words.flatMap(word => {
       let modified_word;
-      const mg_match = word.match(/^(\d+)(mg)$/i);
-      const ml_match = word.match(/^(\d+)(ml)$/i);
-      if (mg_match) {
-        modified_word = `${mg_match[1]} ${mg_match[2]}`
-      }
-      if (ml_match) {
-        modified_word = `${ml_match[1]} ${ml_match[2]}`
+      const match = word.match(/^\d+(ml|gm|mg|mcg|kg|l|s|'s)$/i);
+      if (match) {
+        modified_word = `${match[1]} ${match[2]}`
       }
       return [
         { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
@@ -250,73 +246,59 @@ async function advancedFuzzySearch(payload) {
 async function advancedFuzzySearchV2(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
-    const shouldClauses = [];
-    const mustClauses = [];
-
-    for (const word of words) {
-      let modified_word = word;
-      const mg_match = word.match(/^(\d+)(mg)$/i);
-      const ml_match = word.match(/^(\d+)(ml)$/i);
-      const gm_match = word.match(/^(\d+)(gm)$/i);
-
-        const unit_match = word.match(/^(\d+)([a-zA-Z]+)$/);
-  if (unit_match) {
-    modified_word = `${unit_match[1]} ${unit_match[2]}`;
-
-    // Enforce pack_size match for any detected unit pattern
-    mustClauses.push({
-      match: {
-    "pack_size.keyword": "200 ml Syrup"
+    const shouldClauses = words.flatMap(word => {
+      if (SKU_ABBREVIATIONS[word]) {
+        word = SKU_ABBREVIATIONS[word]
       }
-    });
-  }
-
-      shouldClauses.push(
-        { match: { name: { query: modified_word, fuzziness: "AUTO" } } },
-        { match: { pack_size: { query: modified_word, fuzziness: "AUTO" } } },
+      word = word.charAt(0).toUpperCase()
+      let modified_word;
+      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s)$/i);
+      if (match) {
+        modified_word = `${match[1]} ${match[2]}`
+      }
+      return [
+        { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { strength: { query: word, fuzziness: "AUTO" } } },
-        { match: { brand: { query: modified_word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { wildcard: { name: { value: `*${word}*` } } }
-      );
-    }
-
+      ]
+    });
     let elasticQuery = {
-      query: {
-        bool: {
-          should: [
+      "query": {
+        "bool": {
+          "should": [
             {
-              match: {
-                name: {
-                  query: payload.searchTerm,
-                  fuzziness: "AUTO"
+              "match": {
+                "name": {
+                  "query": payload.searchTerm,
+                  "fuzziness": "AUTO"
                 }
               }
             },
             ...shouldClauses,
           ],
-          minimum_should_match: 1,
-          must: mustClauses, // ← Add required match if unit detected
+          "minimum_should_match": 1,
           filter: []
         }
       }
-    };
-
-    // Add filter for brandName if present
-    if (payload.filter?.is_filter_active && payload.filter.brandName.length > 0) {
-      elasticQuery.query.bool.filter.push({
-        terms: {
-          "brand.keyword": payload.filter.brandName
-        }
-      });
+    }
+    if (payload.filter && payload.filter.is_filter_active) {
+      if (payload.filter.brandName.length > 0) {
+        elasticQuery.query.bool.filter.push({
+          terms: {
+            "brand.keyword": payload.filter.brandName
+          }
+        });
+      }
     }
 
-    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2));
-
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2))
     const response = await axios.post(
       `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
       {
         ...elasticQuery,
-        size: 10
+        "size": 10
       },
       {
         headers: {
@@ -330,7 +312,52 @@ async function advancedFuzzySearchV2(payload) {
     );
 
     logger.info('Search results:', JSON.stringify(response.data.hits.hits, null, 2));
-    return response.data.hits.hits;
+    if (response.data.hits.hits && response.data.hits.hits.length > 0) {
+      console.log("payload.searchTerm", payload)
+      const regex = /^(\d+)(ml|gm|s|`s)$/i;
+      const words = payload.searchTerm.toLowerCase().split(" ");
+      let modified_word;
+
+      for (let i = 0; i < words.length; ++i) {
+        const match = words[i].match(regex);
+
+        if (!!match) {
+          const unit = match[2].toLowerCase();
+          if (unit === 's' || unit === "`s") {
+            modified_word = `${match[1]}`
+          } else {
+            modified_word = `${match[1]} ${unit}`;
+          }
+          break;
+        }
+      }
+
+      if (!modified_word) {
+        return []
+      }
+      let result = []
+      let elastic_result = response.data.hits.hits
+      for (let i = 0; i < elastic_result.length; ++i) {
+        if (elastic_result[i] && elastic_result[i]["_source"]) {
+          let source_data = elastic_result[i]["_source"]
+          let transformed_pack_size = source_data.pack_size
+            .replace(source_data.product_form, '')
+            .trim()
+            .toLowerCase();
+          const input_pack_size = modified_word.split(/\s+/);
+          const output_pack_size = transformed_pack_size.split(/\s+/);
+
+          const isContained = input_pack_size.every(word => output_pack_size.includes(word));
+          if (isContained) {
+            result.push(elastic_result[i])
+          }
+        }
+      }
+      return result
+    } else {
+      return []
+    }
+
   } catch (error) {
     logger.error('Search error:', error.response?.data || error.message);
   }
