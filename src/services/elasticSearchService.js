@@ -255,9 +255,9 @@ async function advancedFuzzySearchV2(payload) {
       if (SKU_ABBREVIATIONS[word]) {
         word = SKU_ABBREVIATIONS[word]
       }
-      word = word.charAt(0).toUpperCase()
+      word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       let modified_word;
-      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s)$/i);
+      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s|'s)$/i);
       if (match) {
         modified_word = `${match[1]} ${match[2]}`
       }
@@ -329,9 +329,9 @@ async function advancedFuzzySearchV3(payload) {
       if (SKU_ABBREVIATIONS[word]) {
         word = SKU_ABBREVIATIONS[word]
       }
-      word = word.charAt(0).toUpperCase()
+      word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       let modified_word;
-      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s)$/i);
+      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s|'s)$/i);
       if (match) {
         modified_word = `${match[1]} ${match[2]}`
       }
@@ -393,7 +393,7 @@ async function advancedFuzzySearchV3(payload) {
     logger.info('Search results:', JSON.stringify(response.data.hits.hits, null, 2));
     if (response.data.hits.hits && response.data.hits.hits.length > 0) {
       console.log("payload.searchTerm", payload)
-      const regex = /^(\d+)(ml|gm|s|`s)$/i;
+      const regex = /^(\d+)(ml|gm|s|`s|'s)$/i;
       const words = payload.searchTerm.toLowerCase().split(" ");
       let modified_word;
 
@@ -402,7 +402,7 @@ async function advancedFuzzySearchV3(payload) {
 
         if (!!match) {
           const unit = match[2].toLowerCase();
-          if (unit === 's' || unit === "`s") {
+          if (unit === 's' || unit === "`s" || unit === "'s") {
             modified_word = `${match[1]}`
           } else {
             modified_word = `${match[1]} ${unit}`;
