@@ -1,5 +1,5 @@
 const productHelper = require("../helper/productHelper");
-const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2 } = require("../services/elasticSearchService");
+const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3 } = require("../services/elasticSearchService");
 
 const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form"]
 
@@ -116,10 +116,28 @@ const searchInProductForData = async(searchTerm,filterData,isAdvancedSearch = fa
     filter : filterData
   }
   if(isAdvancedSearch){
-    model.response = await advancedFuzzySearchV2(elasticData)
+    model.response = await advancedFuzzySearch(elasticData)
   }
   else{
     model.response = await fuzzySearch(elasticData)
+  }
+  
+  
+  return model.response
+}
+
+const advancedSearchInProductForData = async(searchTerm,filterData,whichSearch = "V2") => {
+  let model = {}
+  let elasticData = {
+    index : "product",
+    searchTerm : searchTerm,
+    filter : filterData
+  }
+  if(whichSearch === "V2"){
+    model.response = await advancedFuzzySearchV2(elasticData)
+  }
+  else if(whichSearch === "V3"){
+    model.response = await advancedFuzzySearchV3(elasticData)
   }
   
   
@@ -132,5 +150,6 @@ module.exports = {
   updateSingleRecordOfProductInElasticHandler,
   getSingleRecordOfProductInElasticHandler,
   deleteSingleRecordOfProductInElasticHandler,
-  searchInProductForData
+  searchInProductForData,
+  advancedSearchInProductForData
 };
