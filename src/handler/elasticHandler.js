@@ -21,7 +21,7 @@ const addBulkRecordForProductInElasticHandler = async () => {
         let product_data = {}
         PRODUCT_TRANFORMATION_KEYS.map((key) => {
           if(key === "transformed_pack_size"){
-            product_data[key] = `${pack_size.replace(product_form, '').trim()}`  
+            product_data[key] = `${product.pack_size.replace(product_form, '').trim()}`  
           }else{
             product_data[key] = product[key]
           }
