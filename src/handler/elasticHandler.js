@@ -1,7 +1,7 @@
 const productHelper = require("../helper/productHelper");
 const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3 } = require("../services/elasticSearchService");
 
-const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size"]
+const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price"]
 
 const addBulkRecordForProductInElasticHandler = async () => {
   try {let model = {}
