@@ -1,7 +1,7 @@
 const productHelper = require("../helper/productHelper");
 const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3 } = require("../services/elasticSearchService");
 
-const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price"]
+const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price","tax_definition"]
 
 const addBulkRecordForProductInElasticHandler = async () => {
   try {let model = {}
@@ -126,6 +126,11 @@ const searchInProductForData = async(searchTerm,filterData,isAdvancedSearch = fa
     model.response = await fuzzySearch(elasticData)
   }
   
+  if(model.response && model.response.length > 0){
+    model.response.forEach((item) => {
+    delete item._index;
+    });
+  }
   
   return model.response
 }
