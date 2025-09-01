@@ -129,6 +129,8 @@ const searchInProductForData = async(searchTerm,filterData,isAdvancedSearch = fa
   if(model.response && model.response.length > 0){
     model.response.forEach((item) => {
     delete item._index;
+    item.is_rx = item.sub_category === "RX",
+    delete item.sub_category;
     });
   }
   
