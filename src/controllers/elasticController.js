@@ -128,6 +128,21 @@ const advancedSearchV3ElasticController = async (req, res) => {
   }
 };
 
+const advancedSearchV4ElasticController = async (req, res) => {
+  try {
+    let searchTerm = req.query.searchTerm
+    if(!searchTerm){
+      searchTerm = ""
+    }
+    let filterData = req.body
+    const response = await advancedSearchInProductForData(searchTerm,filterData,"V4");
+    return setSuccessStatus(res,{response})
+  } catch (error) {
+    logger.error(`Error in advancedSearchV4ElasticController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+};
+
 
 
 module.exports = {
@@ -139,5 +154,6 @@ module.exports = {
     addBulkDocElasticController,
     advancedSearchElasticController,
     advancedSearchV2ElasticController,
-    advancedSearchV3ElasticController
+    advancedSearchV3ElasticController,
+    advancedSearchV4ElasticController
 };

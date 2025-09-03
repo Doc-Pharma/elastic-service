@@ -1,5 +1,5 @@
 const productHelper = require("../helper/productHelper");
-const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3 } = require("../services/elasticSearchService");
+const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4 } = require("../services/elasticSearchService");
 
 const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price","tax_definition","sub_category"]
 
@@ -149,6 +149,9 @@ const advancedSearchInProductForData = async(searchTerm,filterData,whichSearch =
   }
   else if(whichSearch === "V3"){
     model.response = await advancedFuzzySearchV3(elasticData)
+  }
+  else if(whichSearch === "V4"){
+    model.response = await advancedFuzzySearchV4(elasticData)
   }
   
   
