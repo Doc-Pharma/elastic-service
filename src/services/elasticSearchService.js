@@ -442,6 +442,121 @@ async function advancedFuzzySearchV3(payload) {
   }
 }
 
+async function advancedFuzzySearchV4(payload) {
+  try {
+    const words = payload.searchTerm.toLowerCase().split(" ");
+    const shouldClauses = words.flatMap(word => {
+      if (SKU_ABBREVIATIONS[word]) {
+        word = SKU_ABBREVIATIONS[word]
+      }
+      word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      let modified_word;
+      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|s|`s|'s)$/i);
+      if (match) {
+        modified_word = `${match[1]} ${match[2]}`
+      }
+      return [
+        { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { strength: { query: word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { wildcard: { name: { value: `*${word}*` } } }
+      ]
+    });
+    let elasticQuery = {
+      "query": {
+        "bool": {
+          "should": [
+            {
+              "match": {
+                "name": {
+                  "query": payload.searchTerm,
+                  "fuzziness": "AUTO"
+                }
+              }
+            },
+            ...shouldClauses,
+          ],
+          "minimum_should_match": 1,
+          filter: []
+        }
+      }
+    }
+    if (payload.filter && payload.filter.is_filter_active) {
+      if (payload.filter.brandName.length > 0) {
+        elasticQuery.query.bool.filter.push({
+          terms: {
+            "brand.keyword": payload.filter.brandName
+          }
+        });
+      }
+    }
+
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2))
+    const response = await axios.post(
+      `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
+      {
+        ...elasticQuery,
+        "size": 10
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD
+        }
+      }
+    );
+
+    logger.info('Search results:', JSON.stringify(response.data.hits.hits, null, 2));
+  
+    if (response.data.hits.hits && response.data.hits.hits.length > 0) {
+      console.log("payload.searchTerm", payload)
+       const extractPackSize = (text) => {
+    const regex = /(\d+)\s*(tablet|tablets|capsule|capsules|ml|gm|kg|piece|strip|strips)/gi;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(text.toLowerCase())) !== null) {
+      let quantity = match[1];
+      let unit = match[2].toLowerCase();
+      if (unit.endsWith('s')) {
+        unit = unit.slice(0, -1);
+      }
+      matches.push(`${quantity} ${unit}`);
+    }
+    return matches;
+  };
+
+  const payloadPackSizes = extractPackSize(payload.filter.pack_size);
+  if (payloadPackSizes.length === 0) {
+    return [];
+  }
+      let result = []
+      let elastic_result = response.data.hits.hits
+      for (let i = 0; i < elastic_result.length; ++i) {
+        if (elastic_result[i] && elastic_result[i]["_source"]) {
+          let source_data = elastic_result[i]["_source"]
+          const responsePackSizes = extractPackSize(source_data.pack_size);
+          const isMatch = payloadPackSizes.some(pSize => {
+            return responsePackSizes.includes(pSize);
+          });
+          if (isMatch) {
+            result.push(elastic_result[i])
+          }
+        }
+      }
+      return result
+    } else {
+      return []
+    }
+
+  } catch (error) {
+    logger.error('Search error:', error.response?.data || error.message);
+  }
+}
+
 
 module.exports = {
   createBulkOrderInElasticsearch,
@@ -452,5 +567,6 @@ module.exports = {
   fuzzySearch,
   advancedFuzzySearch,
   advancedFuzzySearchV2,
-  advancedFuzzySearchV3
+  advancedFuzzySearchV3,
+  advancedFuzzySearchV4
 };
