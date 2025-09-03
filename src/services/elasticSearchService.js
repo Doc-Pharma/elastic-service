@@ -190,7 +190,7 @@ async function advancedFuzzySearch(payload) {
         { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { strength: { query: word, fuzziness: "AUTO" } } },
-        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: word, fuzziness: "AUTO" } } },
         { wildcard: { name: { value: `*${word}*` } } }
       ]
     });
@@ -265,7 +265,7 @@ async function advancedFuzzySearchV2(payload) {
         { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { strength: { query: word, fuzziness: "AUTO" } } },
-        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: word, fuzziness: "AUTO" } } },
         { wildcard: { name: { value: `*${word}*` } } }
       ]
     });
@@ -339,7 +339,7 @@ async function advancedFuzzySearchV3(payload) {
         { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { strength: { query: word, fuzziness: "AUTO" } } },
-        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: word, fuzziness: "AUTO" } } },
         { wildcard: { name: { value: `*${word}*` } } }
       ]
     });
@@ -459,7 +459,7 @@ async function advancedFuzzySearchV4(payload) {
         { match: { name: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { pack_size: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
         { match: { strength: { query: word, fuzziness: "AUTO" } } },
-        { match: { brand: { query: modified_word ? modified_word : word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: word, fuzziness: "AUTO" } } },
         { wildcard: { name: { value: `*${word}*` } } }
       ]
     });
