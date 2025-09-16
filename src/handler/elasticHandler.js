@@ -1,7 +1,7 @@
 const productHelper = require("../helper/productHelper");
-const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3 } = require("../services/elasticSearchService");
+const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4 } = require("../services/elasticSearchService");
 
-const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price"]
+const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price","tax_definition","sub_category"]
 
 const addBulkRecordForProductInElasticHandler = async () => {
   try {let model = {}
@@ -21,7 +21,7 @@ const addBulkRecordForProductInElasticHandler = async () => {
         let product_data = {}
         PRODUCT_TRANFORMATION_KEYS.map((key) => {
           if(key === "transformed_pack_size"){
-            product_data[key] = `${pack_size.replace(product_form, '').trim()}`  
+            product_data[key] = `${product.pack_size.replace(product.product_form, '').trim()}`  
           }else{
             product_data[key] = product[key]
           }
@@ -126,6 +126,13 @@ const searchInProductForData = async(searchTerm,filterData,isAdvancedSearch = fa
     model.response = await fuzzySearch(elasticData)
   }
   
+  if(model.response && model.response.length > 0){
+    model.response.forEach((item) => {
+    delete item._index;
+    item._source.is_rx = item._source.sub_category === "RX",
+    delete item.sub_category;
+    });
+  }
   
   return model.response
 }
@@ -142,6 +149,9 @@ const advancedSearchInProductForData = async(searchTerm,filterData,whichSearch =
   }
   else if(whichSearch === "V3"){
     model.response = await advancedFuzzySearchV3(elasticData)
+  }
+  else if(whichSearch === "V4"){
+    model.response = await advancedFuzzySearchV4(elasticData)
   }
   
   
