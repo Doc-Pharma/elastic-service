@@ -1,4 +1,4 @@
-const { addBulkRecordForProductInElasticHandler, addSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData } = require('../handler/elasticHandler');
+const { addBulkRecordForProductInElasticHandler, addSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData, multiParamProductSearch } = require('../handler/elasticHandler');
 const { logger } = require('../utils/logging');
 const { setBadRequestError, setInternalServerError, setSuccessStatus } = require('../utils/responseStatus');
 
@@ -143,6 +143,20 @@ const advancedSearchV4ElasticController = async (req, res) => {
   }
 };
 
+const multiParamProductSearchElasticController = async (req, res) => {
+  try {
+    const { name, manufacturer, pack_size } = req.body;
+    const response = await multiParamProductSearch({ name, manufacturer, pack_size });
+    console.log(response)
+    return setSuccessStatus(res, { response });
+  } catch (error) {
+    logger.error(`Error in multiParamProductSearchElasticController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+};
+
+
+
 
 
 module.exports = {
@@ -155,5 +169,6 @@ module.exports = {
     advancedSearchElasticController,
     advancedSearchV2ElasticController,
     advancedSearchV3ElasticController,
-    advancedSearchV4ElasticController
+    advancedSearchV4ElasticController,
+    multiParamProductSearchElasticController
 };
