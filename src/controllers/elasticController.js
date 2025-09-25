@@ -143,6 +143,21 @@ const advancedSearchV4ElasticController = async (req, res) => {
   }
 };
 
+const advancedSearchV5ElasticController = async (req, res) => {
+  try {
+    let searchTerm = req.query.searchTerm
+    if(!searchTerm){
+      searchTerm = ""
+    }
+    let filterData = req.body
+    const response = await advancedSearchInProductForData(searchTerm,filterData,"V5");
+    return setSuccessStatus(res,{response})
+  } catch (error) {
+    logger.error(`Error in advancedSearchV4ElasticController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+};
+
 const multiParamProductSearchElasticController = async (req, res) => {
   try {
     const { name, manufacturer, pack_size } = req.body;
@@ -170,5 +185,6 @@ module.exports = {
     advancedSearchV2ElasticController,
     advancedSearchV3ElasticController,
     advancedSearchV4ElasticController,
+    advancedSearchV5ElasticController,
     multiParamProductSearchElasticController
 };
