@@ -104,6 +104,10 @@ const deleteSingleDocumentInElasticSearch = async (payload) => {
   }
 };
 
+/*
+  Basic Search:
+  Matches the fuzzy searchTerm, prefix and wilcard for the name
+*/
 async function fuzzySearch(payload) {
   try {
     let elasticQuery = {
@@ -174,6 +178,12 @@ async function fuzzySearch(payload) {
   }
 }
 
+/*
+  Advanced Search v1:
+  Separates "mg" and "ml" from the search term (e.g., "5mg" → "5 mg"),
+  Splits the search term into words and searches each word in name, strength, brand, and pack_size
+  then performs a basic search using the cleaned term.
+*/
 async function advancedFuzzySearch(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -266,6 +276,12 @@ async function advancedFuzzySearch(payload) {
   }
 }
 
+/*
+Advanced Search v2:
+Splits the search term into words and searches each word in name, strength, brand, and pack_size
+Separates units like ml, gm, mg, mcg, kg, l, s, `'s`, and `s` from the search term 
+(e.g., "1's" → "1 's"), then performs a basic search.
+*/
 async function advancedFuzzySearchV2(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -353,6 +369,11 @@ async function advancedFuzzySearchV2(payload) {
   }
 }
 
+/*
+Advanced Search v3:
+Separates units like ml, gm, mg, mcg, kg, l, s, `'s`, and `s` from the search term,
+performs a basic search, and filters results to match the pack_size mentioned in the search term.
+*/
 async function advancedFuzzySearchV3(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -491,6 +512,12 @@ async function advancedFuzzySearchV3(payload) {
   }
 }
 
+/*
+Advanced Search v4:
+Splits the search term into words and searches each word in name, strength, brand, and pack_size
+Separates dosage forms and units like tablet, tablets, capsule, capsules, ml, gm, kg, piece, strip, strips
+from the search term, performs a basic search, and filters results by matching pack_size.
+*/
 async function advancedFuzzySearchV4(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -858,6 +885,11 @@ async function multiParamElasticSearch(payload) {
   }
 }
 
+/*
+Advanced Search v5:
+Separates units and abbreviations like ml, gm, mg, mcg, kg, l, tab, cap from the search term,
+performs a basic search, and returns results that match the specified pack_size.
+*/
 async function advancedFuzzySearchV5(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
