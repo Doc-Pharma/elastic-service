@@ -104,6 +104,10 @@ const deleteSingleDocumentInElasticSearch = async (payload) => {
   }
 };
 
+/*
+  Basic Search:
+  Matches the fuzzy searchTerm, prefix and wilcard for the name
+*/
 async function fuzzySearch(payload) {
   try {
     let elasticQuery = {
@@ -174,6 +178,12 @@ async function fuzzySearch(payload) {
   }
 }
 
+/*
+  Advanced Search v1:
+  Separates "mg" and "ml" from the search term (e.g., "5mg" → "5 mg"),
+  Splits the search term into words and searches each word in name, strength, brand, and pack_size
+  then performs a basic search using the cleaned term.
+*/
 async function advancedFuzzySearch(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -266,6 +276,12 @@ async function advancedFuzzySearch(payload) {
   }
 }
 
+/*
+Advanced Search v2:
+Splits the search term into words and searches each word in name, strength, brand, and pack_size
+Separates units like ml, gm, mg, mcg, kg, l, s, `'s`, and `s` from the search term 
+(e.g., "1's" → "1 's"), then performs a basic search.
+*/
 async function advancedFuzzySearchV2(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -353,6 +369,11 @@ async function advancedFuzzySearchV2(payload) {
   }
 }
 
+/*
+Advanced Search v3:
+Separates units like ml, gm, mg, mcg, kg, l, s, `'s`, and `s` from the search term,
+performs a basic search, and filters results to match the pack_size mentioned in the search term.
+*/
 async function advancedFuzzySearchV3(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -491,6 +512,12 @@ async function advancedFuzzySearchV3(payload) {
   }
 }
 
+/*
+Advanced Search v4:
+Splits the search term into words and searches each word in name, strength, brand, and pack_size
+Separates dosage forms and units like tablet, tablets, capsule, capsules, ml, gm, kg, piece, strip, strips
+from the search term, performs a basic search, and filters results by matching pack_size.
+*/
 async function advancedFuzzySearchV4(payload) {
   try {
     const words = payload.searchTerm.toLowerCase().split(" ");
@@ -858,6 +885,149 @@ async function multiParamElasticSearch(payload) {
   }
 }
 
+/*
+Advanced Search v5:
+Separates units and abbreviations like ml, gm, mg, mcg, kg, l, tab, cap from the search term,
+performs a basic search, and returns results that match the specified pack_size.
+*/
+async function advancedFuzzySearchV5(payload) {
+  try {
+    const words = payload.searchTerm.toLowerCase().split(" ");
+    const shouldClauses = words.flatMap((word) => {
+      if (SKU_ABBREVIATIONS[word]) {
+        word = SKU_ABBREVIATIONS[word];
+      }
+      word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      console.log(word)
+      let modified_word;
+      const match = word.match(/^(\d+)(ml|gm|mg|mcg|kg|l|tab|cap)$/i);
+      if (match) {
+        modified_word = `${match[1]} ${match[2]}`;
+      }
+      return [
+        {
+          match: {
+            name: {
+              query: modified_word ? modified_word : word,
+              fuzziness: "AUTO",
+            },
+          },
+        },
+        {
+          match: {
+            pack_size: {
+              query: modified_word ? modified_word : word,
+              fuzziness: "AUTO",
+            },
+          },
+        },
+        { match: { strength: { query: word, fuzziness: "AUTO" } } },
+        { match: { brand: { query: word, fuzziness: "AUTO" } } },
+        { wildcard: { name: { value: `*${word}*` } } },
+      ];
+    });
+    let elasticQuery = {
+      query: {
+        bool: {
+          should: [
+            {
+              match: {
+                name: {
+                  query: payload.searchTerm,
+                  fuzziness: "AUTO",
+                },
+              },
+            },
+            ...shouldClauses,
+          ],
+          minimum_should_match: 1,
+          filter: [],
+        },
+      },
+    };
+    if (payload.filter && payload.filter.is_filter_active) {
+      if (payload.filter.brandName.length > 0) {
+        elasticQuery.query.bool.filter.push({
+          terms: {
+            "brand.keyword": payload.filter.brandName,
+          },
+        });
+      }
+    }
+
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2));
+    const response = await axios.post(
+      `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
+      {
+        ...elasticQuery,
+        size: 10,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD,
+        },
+      }
+    );
+
+    logger.info(
+      "Search results:",
+      JSON.stringify(response.data.hits.hits, null, 2)
+    );
+    if (response.data.hits.hits && response.data.hits.hits.length > 0) {
+      const regex = /^(\d+)(ml|gm|s|tab|cap)$/i;
+      const words = payload.searchTerm.toLowerCase().split(" ");
+      let modified_word;
+
+      for (let i = 0; i < words.length; ++i) {
+        const match = words[i].match(regex);
+
+        if (!!match) {
+          const unit = match[2].toLowerCase();
+          if (unit === "s" || unit === "`s" || unit === "cap" || unit === "tab") {
+            modified_word = `${match[1]}`;
+          } else {
+            modified_word = `${match[1]} ${unit}`;
+          }
+          break;
+        }
+      }
+
+      if (!modified_word) {
+        return [];
+      }
+      let result = [];
+      let elastic_result = response.data.hits.hits;
+      for (let i = 0; i < elastic_result.length; ++i) {
+        if (elastic_result[i] && elastic_result[i]["_source"]) {
+          let source_data = elastic_result[i]["_source"];
+          let transformed_pack_size = source_data.pack_size
+            .replace(source_data.product_form, "")
+            .trim()
+            .toLowerCase();
+          const input_pack_size = modified_word.split(/\s+/);
+          const output_pack_size = transformed_pack_size.split(/\s+/);
+
+          const isContained = input_pack_size.every((word) =>
+            output_pack_size.includes(word)
+          );
+          if (isContained) {
+            result.push(elastic_result[i]);
+          }
+        }
+      }
+      return result;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    logger.error("Search error:", error.response?.data || error.message);
+  }
+}
+
 module.exports = {
   createBulkOrderInElasticsearch,
   createSingleDocumentInElasticSearch,
@@ -869,5 +1039,6 @@ module.exports = {
   advancedFuzzySearchV2,
   advancedFuzzySearchV3,
   advancedFuzzySearchV4,
+  advancedFuzzySearchV5,
   multiParamElasticSearch,
 };
