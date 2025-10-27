@@ -52,7 +52,11 @@ const upsertSingleRecordOfProductInElasticHandler = async (id) => {
   model.product = await productHelper.findOne(inputData)
   let product_data = {}
         PRODUCT_TRANFORMATION_KEYS.map((key) => {
-          product_data[key] = model.product[key]
+          if(key === "transformed_pack_size"){
+            product_data[key] = `${product.pack_size.replace(product.product_form, '').trim()}`  
+          }else{
+            product_data[key] = product[key]
+          }
         })
   let elasticData = {
     index : "product",
