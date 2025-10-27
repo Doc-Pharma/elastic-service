@@ -1,4 +1,4 @@
-const { addBulkRecordForProductInElasticHandler, addSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData, multiParamProductSearch } = require('../handler/elasticHandler');
+const { addBulkRecordForProductInElasticHandler, upsertSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData, multiParamProductSearch } = require('../handler/elasticHandler');
 const { logger } = require('../utils/logging');
 const { setBadRequestError, setInternalServerError, setSuccessStatus } = require('../utils/responseStatus');
 
@@ -12,16 +12,16 @@ const addBulkDocElasticController = async (req, res) => {
   }
 };
 
-const addSingleDocElasticController = async (req, res) => {
+const upsertSingleDocElasticController = async (req, res) => {
   try {
     let id = req.body.id
     if(!id){
       return setBadRequestError(res,{message:"Please provide id in the body"})
     }
-    const response = await addSingleRecordOfProductInElasticHandler(id);
-    return setSuccessStatus(res,{response})
+    const elastic_response = await upsertSingleRecordOfProductInElasticHandler(id);
+    return setSuccessStatus(res,{message : `Upsert product ${id} to elastic`})
   } catch (error) {
-    logger.error(`Error in addSingleDocElasticController : ${error.message || error}`);
+    logger.error(`Error in upsertSingleDocElasticController : ${error.message || error}`);
     return setInternalServerError(res, error.message || error);
   }
 };
@@ -179,7 +179,7 @@ module.exports = {
     deleteSingleDocElasticController,
     updateSingleDocElasticController,
     getSingleDocElasticController,
-    addSingleDocElasticController,
+    upsertSingleDocElasticController,
     addBulkDocElasticController,
     advancedSearchElasticController,
     advancedSearchV2ElasticController,

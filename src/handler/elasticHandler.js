@@ -1,5 +1,5 @@
 const productHelper = require("../helper/productHelper");
-const { createBulkOrderInElasticsearch, createSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4, multiParamElasticSearch, advancedFuzzySearchV5 } = require("../services/elasticSearchService");
+const { createBulkOrderInElasticsearch, upsertSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4, multiParamElasticSearch, advancedFuzzySearchV5 } = require("../services/elasticSearchService");
 
 const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price","tax_definition","sub_category"]
 
@@ -9,9 +9,9 @@ const addBulkRecordForProductInElasticHandler = async () => {
   while(model.data_length){
     console.log("model.data_length",model.data_length)
     let inputData = {
+      query : { id: { [Op.gt]: (model.data_length - 1) * 100 } },
       sortBy : [["id", "ASC"]],
       page_size : 100,
-      page : model.data_length,
   }
     model.products = await productHelper.findAll(inputData)
     if(model.products.length === 0){
@@ -44,8 +44,8 @@ const addBulkRecordForProductInElasticHandler = async () => {
 }
 };
 
-const addSingleRecordOfProductInElasticHandler = async (id) => {
-  let model = {}
+const upsertSingleRecordOfProductInElasticHandler = async (id) => {
+  try{let model = {}
   let inputData = {
     query : { id : id}
 }
@@ -59,9 +59,12 @@ const addSingleRecordOfProductInElasticHandler = async (id) => {
     id : id,
     data : product_data
   }
-  model.response = await createSingleDocumentInElasticSearch(elasticData)
+  model.result = await upsertSingleDocumentInElasticSearch(elasticData)
   
-  return model.response
+  return model.result
+}catch(e){
+  throw e
+}
 };
 
 const updateSingleRecordOfProductInElasticHandler = async (id) => {
@@ -176,7 +179,7 @@ const multiParamProductSearch = async (searchParams) => {
 
 module.exports = {
   addBulkRecordForProductInElasticHandler,
-  addSingleRecordOfProductInElasticHandler,
+  upsertSingleRecordOfProductInElasticHandler,
   updateSingleRecordOfProductInElasticHandler,
   getSingleRecordOfProductInElasticHandler,
   deleteSingleRecordOfProductInElasticHandler,
