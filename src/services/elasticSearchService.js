@@ -45,22 +45,26 @@ const getDocumentByIdInElasticSearch = async (payload) => {
   }
 };
 
-const createSingleDocumentInElasticSearch = async (payload) => {
+const upsertSingleDocumentInElasticSearch = async (payload) => {
   try {
     const BULK_ES_URL = `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_doc/${payload.id}`;
-    const response = await apiCaller("POST", BULK_ES_URL, payload.data, {
-      auth: {
-        username: process.env.ES_USERNAME,
-        password: process.env.ES_PASSWORD,
-      },
-    });
+    const response = await axios.post(
+      BULK_ES_URL,
+      payload.data,
+      {
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD,
+        },
+      }
+    );
     return response;
   } catch (error) {
     logger.error(
       `Error while creating bulk on elastic-search`,
       error?.response?.data
     );
-    throw new Error(JSON.stringify(error?.response?.data));
+    throw new Error(JSON.stringify(error.response?.data || error.message));
   }
 };
 
@@ -1030,7 +1034,7 @@ async function advancedFuzzySearchV5(payload) {
 
 module.exports = {
   createBulkOrderInElasticsearch,
-  createSingleDocumentInElasticSearch,
+  upsertSingleDocumentInElasticSearch,
   updateSingleDocumentInElasticSearch,
   getDocumentByIdInElasticSearch,
   deleteSingleDocumentInElasticSearch,

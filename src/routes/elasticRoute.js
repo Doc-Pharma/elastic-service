@@ -1,9 +1,9 @@
-const { addBulkDocElasticController, addSingleDocElasticController, getSingleDocElasticController, updateSingleDocElasticController, deleteSingleDocElasticController, searchElasticController, advancedSearchElasticController, advancedSearchV2ElasticController, advancedSearchV3ElasticController, advancedSearchV4ElasticController, multiParamProductSearchElasticController, advancedSearchV5ElasticController } = require('../controllers/elasticController');
+const { addBulkDocElasticController, upsertSingleDocElasticController, getSingleDocElasticController, updateSingleDocElasticController, deleteSingleDocElasticController, searchElasticController, advancedSearchElasticController, advancedSearchV2ElasticController, advancedSearchV3ElasticController, advancedSearchV4ElasticController, multiParamProductSearchElasticController, advancedSearchV5ElasticController } = require('../controllers/elasticController');
 
 const router = require('express').Router();
 
 router.post('/elastic/add-bulk', addBulkDocElasticController);
-router.post('/elastic/add', addSingleDocElasticController);
+router.post('/elastic/add', upsertSingleDocElasticController);
 router.get('/elastic/get', getSingleDocElasticController);
 router.post('/elastic/update', updateSingleDocElasticController);
 router.post('/elastic/delete', deleteSingleDocElasticController);
