@@ -53,7 +53,7 @@ const upsertSingleRecordOfProductInElasticHandler = async (id) => {
   let product_data = {}
         PRODUCT_TRANFORMATION_KEYS.map((key) => {
           if(key === "transformed_pack_size"){
-            product_data[key] = `${product.pack_size.replace(product.product_form, '').trim()}`  
+            product_data[key] = `${product.pack_size.replace(product.product_form, '').trim()}`  //if pack_size = 500ml liquid then transformed_pack_size = 500ml
           }else{
             product_data[key] = product[key]
           }
