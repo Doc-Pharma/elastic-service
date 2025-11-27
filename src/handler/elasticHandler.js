@@ -1,5 +1,6 @@
 const productHelper = require("../helper/productHelper");
 const { createBulkOrderInElasticsearch, upsertSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4, multiParamElasticSearch, advancedFuzzySearchV5 } = require("../services/elasticSearchService");
+const { Op } = require('sequelize');
 
 const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price","tax_definition","sub_category"]
 
