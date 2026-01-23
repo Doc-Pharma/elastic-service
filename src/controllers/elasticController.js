@@ -1,4 +1,4 @@
-const { addBulkRecordForProductInElasticHandler, upsertSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData, multiParamProductSearch } = require('../handler/elasticHandler');
+const { addBulkRecordForProductInElasticHandler, upsertSingleRecordOfProductInElasticHandler, getSingleRecordOfProductInElasticHandler, updateSingleRecordOfProductInElasticHandler, deleteSingleRecordOfProductInElasticHandler, searchInProductForData, advancedSearchInProductForData, multiParamProductSearch, searchElasticForInternalUseControllerData } = require('../handler/elasticHandler');
 const { logger } = require('../utils/logging');
 const { setBadRequestError, setInternalServerError, setSuccessStatus } = require('../utils/responseStatus');
 
@@ -82,6 +82,21 @@ const searchElasticController = async (req, res) => {
     return setInternalServerError(res, error.message || error);
   }
 };
+// this is for internal docpharmac use with name and dp_id fields
+const searchElasticForInternalUseController = async (req , res) => {
+  try {
+    let searchTerm = req.query.searchTerm
+    if(!searchTerm){
+      searchTerm = ""
+    }
+    let filterData = req.body
+    const response = await searchElasticForInternalUseControllerData(searchTerm,filterData);
+    return setSuccessStatus(res,{response})
+  } catch (error) {
+    logger.error(`Error in searchElasticForInternalUseController : ${error.message || error}`);
+    return setInternalServerError(res, error.message || error);
+  }
+}
 
 const advancedSearchElasticController = async (req, res) => {
   try {
@@ -186,5 +201,6 @@ module.exports = {
     advancedSearchV3ElasticController,
     advancedSearchV4ElasticController,
     advancedSearchV5ElasticController,
-    multiParamProductSearchElasticController
+    multiParamProductSearchElasticController,
+    searchElasticForInternalUseController
 };
