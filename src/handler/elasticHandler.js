@@ -1,5 +1,5 @@
 const productHelper = require("../helper/productHelper");
-const { createBulkOrderInElasticsearch, upsertSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4, multiParamElasticSearch, advancedFuzzySearchV5 } = require("../services/elasticSearchService");
+const { createBulkOrderInElasticsearch, upsertSingleDocumentInElasticSearch, updateSingleDocumentInElasticSearch, getDocumentByIdInElasticSearch, deleteSingleDocumentInElasticSearch, fuzzySearch, advancedFuzzySearch, advancedFuzzySearchV2, advancedFuzzySearchV3, advancedFuzzySearchV4, multiParamElasticSearch, advancedFuzzySearchV5, fuzzySearchForInternalUse } = require("../services/elasticSearchService");
 const { Op } = require('sequelize');
 
 const PRODUCT_TRANFORMATION_KEYS = ["drug_name","name","strength","pack_size","manufacturer","diseases","dp_id","sku_pack_form","sub_category","brand","product_form","transformed_pack_size","global_price","tax_definition","sub_category", "sku_id"]
@@ -145,6 +145,29 @@ const searchInProductForData = async(searchTerm,filterData,isAdvancedSearch = fa
   return model.response
 }
 
+// this is for internal docpharmac use with name and dp_id fields
+const searchElasticForInternalUseControllerData = async(searchTerm,filterData) => {
+  let model = {}
+  let elasticData = {
+    index : "product",
+    searchTerm : searchTerm,
+    filter : filterData
+  }
+
+  model.response = await fuzzySearchForInternalUse(elasticData)
+
+  
+  if(model.response && model.response.length > 0){
+    model.response.forEach((item) => {
+    delete item._index;
+    item._source.is_rx = item._source.sub_category === "RX",
+    delete item.sub_category;
+    });
+  }
+  
+  return model.response
+}
+
 const advancedSearchInProductForData = async(searchTerm,filterData,whichSearch = "V2") => {
   let model = {}
   let elasticData = {
@@ -190,5 +213,6 @@ module.exports = {
   deleteSingleRecordOfProductInElasticHandler,
   searchInProductForData,
   advancedSearchInProductForData,
-  multiParamProductSearch
+  multiParamProductSearch,
+  searchElasticForInternalUseControllerData
 };

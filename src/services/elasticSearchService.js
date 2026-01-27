@@ -182,6 +182,99 @@ async function fuzzySearch(payload) {
   }
 }
 
+// here we seach with name and dp_id fields
+async function fuzzySearchForInternalUse(payload) {
+  try {
+    let elasticQuery = {
+      query: {
+        bool: {
+          should: [
+            {
+              match: {
+                name: {
+                  query: payload.searchTerm,
+                  fuzziness: "AUTO",
+                },
+              },
+            },
+            {
+              match: {
+                dp_id: {
+                  query: `*${payload.searchTerm}*`,
+                  fuzziness: "AUTO",
+                },
+              },
+            },
+            {
+              match_phrase_prefix: {
+                name: payload.searchTerm,
+              },
+            },
+            {
+              match_phrase_prefix: {
+                dp_id: payload.searchTerm,
+              },
+            },
+            {
+              wildcard: {
+                name: {
+                  value: `*${payload.searchTerm.toLowerCase()}*`, // This ensures that it can match "medi" anywhere in the name.
+                },
+              },
+            },
+            {
+              wildcard: {
+                dp_id: {
+                  value: `*${payload.searchTerm}*`,
+                },
+              },
+            },
+          ],
+          minimum_should_match: 1,
+          filter: [],
+        },
+      },
+    };
+
+
+    if (payload.filter && payload.filter.is_filter_active) {
+      if (payload.filter.brandName.length > 0) {
+        elasticQuery.query.bool.filter.push({
+          terms: {
+            "brand.keyword": payload.filter.brandName,
+          },
+        });
+      }
+    }
+
+    console.log("elasticQuery", JSON.stringify(elasticQuery, null, 2));
+    const response = await axios.post(
+      `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
+      {
+        ...elasticQuery,
+        size: 10,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        auth: {
+          username: process.env.ES_USERNAME,
+          password: process.env.ES_PASSWORD,
+        },
+      }
+    );
+
+    logger.info(
+      "Search results:",
+      JSON.stringify(response.data.hits.hits, null, 2)
+    );
+    return response.data.hits.hits;
+  } catch (error) {
+    logger.error("Search error:", error.response?.data || error.message);
+  }
+}
+
 /*
   Advanced Search v1:
   Separates "mg" and "ml" from the search term (e.g., "5mg" → "5 mg"),
@@ -1045,4 +1138,5 @@ module.exports = {
   advancedFuzzySearchV4,
   advancedFuzzySearchV5,
   multiParamElasticSearch,
+  fuzzySearchForInternalUse,
 };
