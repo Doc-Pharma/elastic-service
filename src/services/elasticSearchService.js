@@ -159,7 +159,7 @@ async function fuzzySearch(payload) {
       `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
       {
         ...elasticQuery,
-        size: 10,
+        size: 100,
       },
       {
         headers: {
@@ -350,7 +350,7 @@ async function advancedFuzzySearch(payload) {
       `${process.env.ES_BASE_URL}/${process.env.ES_DB}-${payload.index}/_search`,
       {
         ...elasticQuery,
-        size: 10,
+        size: 100,
       },
       {
         headers: {
